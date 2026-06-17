@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome Weddings</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #F5F0E8; color: #1a1a1a; }
+    ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #C9A96E; border-radius: 2px; }
+
+    /* LAYOUT */
+    .app { display: flex; height: 100vh; overflow: hidden; }
+    .sidebar { width: 220px; min-width: 220px; background: #2C1A0E; display: flex; flex-direction: column; height: 100vh; }
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* SIDEBAR */
+    .sb-logo { padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .sb-logo .brand { color: #C9A96E; font-size: 12px; font-weight: 500; letter-spacing: 0.5px; }
+    .sb-logo .sub { color: rgba(255,255,255,0.35); font-size: 11px; margin-top: 2px; }
+    .sb-nav { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .sb-nav-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; cursor: pointer; color: rgba(255,255,255,0.5); font-size: 13px; border-left: 2px solid transparent; transition: all 0.15s; }
+    .sb-nav-item:hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.05); }
+    .sb-nav-item.active { color: #C9A96E; background: rgba(201,169,110,0.1); border-left-color: #C9A96E; }
+    .sb-section-label { font-size: 10px; color: rgba(255,255,255,0.3); padding: 12px 12px 4px; letter-spacing: 1px; text-transform: uppercase; }
+    .sb-casais { flex: 1; overflow-y: auto; }
+    .sb-casal-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: pointer; border-left: 2px solid transparent; transition: all 0.15s; }
+    .sb-casal-item:hover { background: rgba(255,255,255,0.04); }
+    .sb-casal-item.active { border-left-color: #C9A96E; background: rgba(201,169,110,0.06); }
+    .sb-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; flex-shrink: 0; }
+    .sb-casal-nome { font-size: 12px; color: rgba(255,255,255,0.7); font-weight: 500; }
+    .sb-casal-dest { font-size: 10px; color: rgba(255,255,255,0.3); }
+    .sb-user { padding: 12px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 8px; }
+    .sb-user-name { font-size: 12px; color: rgba(255,255,255,0.7); }
+    .sb-user-role { font-size: 10px; color: rgba(255,255,255,0.3); }
+
+    /* TOPBAR */
+    .topbar { background: #fff; border-bottom: 1px solid #f0f0f0; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .topbar-title { font-size: 15px; font-weight: 500; }
+    .topbar-sub { font-size: 12px; color: #888; margin-top: 2px; }
+
+    /* TABS */
+    .tabs { background: #fff; border-bottom: 1px solid #f0f0f0; padding: 0 20px; display: flex; gap: 0; flex-shrink: 0; overflow-x: auto; }
+    .tab { padding: 10px 14px; font-size: 12px; font-weight: 500; color: #999; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all 0.15s; }
+    .tab:hover { color: #555; }
+    .tab.active { color: #B8945A; border-bottom-color: #B8945A; }
+
+    /* CONTENT */
+    .content { flex: 1; overflow-y: auto; padding: 20px; background: #F5F0E8; }
+
+    /* CARDS */
+    .card { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 16px 20px; margin-bottom: 14px; }
+    .card-title { font-size: 14px; font-weight: 500; color: #1a1a1a; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .card-title i { color: #B8945A; }
+
+    /* GRID */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+    .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+
+    /* METRIC CARDS */
+    .metric { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 14px; }
+    .metric-label { font-size: 11px; color: #999; margin-bottom: 4px; }
+    .metric-value { font-size: 22px; font-weight: 500; color: #1a1a1a; }
+    .metric-sub { font-size: 11px; color: #999; margin-top: 2px; }
+
+    /* BADGES */
+    .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+    .badge-green { background: #EAF3DE; color: #3B6D11; }
+    .badge-amber { background: #FAEEDA; color: #854F0B; }
+    .badge-red { background: #FCEBEB; color: #A32D2D; }
+    .badge-gray { background: #f0f0f0; color: #666; }
+    .badge-blue { background: #E6F1FB; color: #185FA5; }
+    .badge-purple { background: #EEEDFE; color: #3C3489; }
+
+    /* FORM */
+    input, select, textarea { border: 1px solid #e0e0e0; border-radius: 8px; padding: 8px 10px; font-size: 13px; font-family: inherit; width: 100%; outline: none; transition: border 0.15s; }
+    input:focus, select:focus, textarea:focus { border-color: #C9A96E; }
+    textarea { resize: none; }
+    label { font-size: 11px; color: #999; display: block; margin-bottom: 4px; }
+    .field { margin-bottom: 12px; }
+
+    /* BUTTONS */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; font-size: 13px; border-radius: 8px; cursor: pointer; border: 1px solid #e0e0e0; background: #fff; color: #333; font-family: inherit; transition: all 0.15s; }
+    .btn:hover { background: #f5f5f5; }
+    .btn-gold { background: #C9A96E; color: #2C1A0E; border-color: #C9A96E; font-weight: 500; }
+    .btn-gold:hover { background: #b8945a; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+    /* TASK ITEMS */
+    .task-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid #eee; border-radius: 10px; margin-bottom: 6px; transition: border 0.15s; }
+    .task-item:hover { border-color: #ddd; }
+    .task-check { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid #ddd; flex-shrink: 0; margin-top: 2px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+    .task-check.done { background: #C9A96E; border-color: #C9A96E; }
+    .task-nome { font-size: 13px; font-weight: 500; color: #1a1a1a; }
+    .task-nome.done { text-decoration: line-through; color: #999; }
+
+    /* PARCELA ITEMS */
+    .parc-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: 8px; margin-bottom: 6px; border-left: 3px solid; }
+    .parc-pago { border-left-color: #639922; background: #f0f8e8; }
+    .parc-pendente { border-left-color: #EF9F27; background: #fdf5e8; }
+    .parc-atrasado { border-left-color: #E24B4A; background: #fef0f0; }
+
+    /* ETAPAS CRONOGRAMA */
+    .etapa-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid #eee; border-radius: 10px; margin-bottom: 8px; }
+    .etapa-letra { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+
+    /* DOC ITEMS */
+    .doc-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #eee; border-radius: 10px; margin-bottom: 6px; }
+    .doc-icon { width: 36px; height: 36px; background: #FAEEDA; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #854F0B; }
+
+    /* UPLOAD ZONE */
+    .upload-zone { border: 2px dashed #ddd; border-radius: 10px; padding: 24px; text-align: center; cursor: pointer; transition: border 0.15s; }
+    .upload-zone:hover { border-color: #C9A96E; }
+    .upload-zone i { font-size: 24px; color: #B8945A; display: block; margin-bottom: 8px; }
+
+    /* ALERT */
+    .alert { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; }
+    .alert-warn { background: #FAEEDA; color: #854F0B; }
+    .alert-info { background: #E6F1FB; color: #185FA5; }
+
+    /* PROGRESS */
+    .progress-wrap { height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: #C9A96E; border-radius: 3px; transition: width 0.3s; }
+
+    /* LOGIN */
+    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #2C1A0E; }
+    .login-card { background: #fff; border-radius: 16px; padding: 40px; width: 100%; max-width: 380px; }
+    .login-logo { text-align: center; margin-bottom: 28px; }
+    .login-logo .brand { font-size: 20px; font-weight: 500; color: #2C1A0E; }
+    .login-logo .sub { font-size: 13px; color: #999; margin-top: 4px; }
+
+    /* AGENDA */
+    .agenda-header { background: #2C1A0E; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; }
+
+    /* PAINEL */
+    .wp-card { background: #fff; border: 1px solid #eee; border-radius: 12px; overflow: hidden; }
+    .wp-header { padding: 14px 16px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 10px; }
+    .wp-casal-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
+    .wp-casal-row:last-child { border-bottom: none; }
+
+    /* HIDDEN */
+    .hidden { display: none !important; }
+    .section { display: none; }
+    .section.active { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="page-login" class="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="brand">Welcome Weddings</div>
+      <div class="sub">Gestão de Destination Weddings</div>
+    </div>
+    <div class="field">
+      <label>E-mail</label>
+      <input type="email" id="login-email" placeholder="seu@email.com" />
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="login-senha" placeholder="••••••••" />
+    </div>
+    <div id="login-erro" style="color:#E24B4A; font-size:12px; margin-bottom:10px; display:none;"></div>
+    <button class="btn btn-gold" style="width:100%; justify-content:center;" onclick="fazerLogin()">Entrar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="page-app" class="app hidden">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-logo">
+      <div class="brand">Welcome Weddings</div>
+      <div class="sub">Gestão de Destination Weddings</div>
+    </div>
+    <div class="sb-nav">
+      <div class="sb-nav-item active" onclick="navegar('casal')" id="nav-casal">
+        <i class="ti ti-layout-dashboard"></i> Visão geral
+      </div>
+      <div class="sb-nav-item" onclick="navegar('agenda')" id="nav-agenda">
+        <i class="ti ti-calendar"></i> Minha agenda
+      </div>
+      <div class="sb-nav-item" onclick="navegar('painel')" id="nav-painel">
+        <i class="ti ti-users"></i> Painel diretoria
+      </div>
+    </div>
+    <div class="sb-section-label">Meus casais</div>
+    <div class="sb-casais" id="sb-casais-list"></div>
+    <div class="sb-user">
+      <div class="sb-avatar" style="background:#FAEEDA; color:#854F0B;" id="user-avatar"></div>
+      <div>
+        <div class="sb-user-name" id="user-nome"></div>
+        <div class="sb-user-role" id="user-role"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- CASAL PAGE -->
+    <div id="page-casal">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title" id="casal-title">Selecione um casal</div>
+          <div class="topbar-sub" id="casal-sub"></div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-sm" onclick="logout()"><i class="ti ti-logout"></i> Sair</button>
+          <button class="btn btn-gold btn-sm" onclick="abrirNovoFornecedor()"><i class="ti ti-plus"></i> Novo fornecedor</button>
+        </div>
+      </div>
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('visao-geral', this)">Visão geral</div>
+        <div class="tab" onclick="switchTab('planejamento', this)">Planejamento</div>
+        <div class="tab" onclick="switchTab('cronograma', this)">Cronograma</div>
+        <div class="tab" onclick="switchTab('fornecedores', this)">Fornecedores</div>
+        <div class="tab" onclick="switchTab('financeiro', this)">Financeiro</div>
+        <div class="tab" onclick="switchTab('inspiracoes', this)">Inspirações</div>
+        <div class="tab" onclick="switchTab('documentos', this)">Documentos</div>
+        <div class="tab" onclick="switchTab('tarefas', this)">Tarefas</div>
+      </div>
+      <div class="content">
+        <div class="section active" id="tab-visao-geral"></div>
+        <div class="section" id="tab-planejamento"></div>
+        <div class="section" id="tab-cronograma"></div>
+        <div class="section" id="tab-fornecedores"></div>
+        <div class="section" id="tab-financeiro"></div>
+        <div class="section" id="tab-inspiracoes"></div>
+        <div class="section" id="tab-documentos"></div>
+        <div class="section" id="tab-tarefas"></div>
+      </div>
+    </div>
+
+    <!-- AGENDA PAGE -->
+    <div id="page-agenda" class="hidden" style="display:flex;flex-direction:column;height:100vh;overflow:hidden;">
+      <div class="agenda-header">
+        <div>
+          <div style="font-size:11px;color:rgba(201,169,110,0.6);letter-spacing:1px;">Welcome Weddings · Agenda</div>
+          <div style="font-size:16px;font-weight:500;color:#fff;" id="agenda-nome"></div>
+        </div>
+        <div style="display:flex;gap:20px;">
+          <div style="text-align:center;"><div style="font-size:20px;font-weight:500;color:#E24B4A;" id="agenda-atrasadas">0</div><div style="font-size:10px;color:rgba(255,255,255,0.4);">Atrasadas</div></div>
+          <div style="text-align:center;"><div style="font-size:20px;font-weight:500;color:#C9A96E;" id="agenda-abertas">0</div><div style="font-size:10px;color:rgba(255,255,255,0.4);">Abertas</div></div>
+        </div>
+      </div>
+      <div style="background:#fff;border-bottom:1px solid #f0f0f0;padding:10px 20px;display:flex;gap:8px;">
+        <button class="btn btn-sm active-filter" onclick="filtrarAgenda('todas',this)">Todas</button>
+        <button class="btn btn-sm" onclick="filtrarAgenda('casal',this)">Do casal</button>
+        <button class="btn btn-sm" onclick="filtrarAgenda('interna',this)">Internas</button>
+        <button class="btn btn-sm" onclick="filtrarAgenda('atrasadas',this)">Atrasadas</button>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:20px;" id="agenda-content"></div>
+    </div>
+
+    <!-- PAINEL DIRETORIA -->
+    <div id="page-painel" class="hidden" style="display:flex;flex-direction:column;height:100vh;overflow:hidden;">
+      <div class="agenda-header">
+        <div>
+          <div style="font-size:11px;color:rgba(201,169,110,0.6);letter-spacing:1px;">Welcome Weddings</div>
+          <div style="font-size:16px;font-weight:500;color:#fff;">Painel da diretoria</div>
+        </div>
+        <div style="display:flex;gap:20px;">
+          <div style="text-align:center;"><div style="font-size:20px;font-weight:500;color:#C9A96E;" id="painel-casais">0</div><div style="font-size:10px;color:rgba(255,255,255,0.4);">Casais</div></div>
+        </div>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:20px;" id="painel-content"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// SUPABASE CONFIG
+// ============================================================
+const SUPABASE_URL = 'https://qlhizmxcpymqikdqfbbh.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsaGl6bXhjcHltcWlrZHFmYmJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2OTY3NDcsImV4cCI6MjA5NzI3Mjc0N30.U9XiKOc6FySVhX-2DiM_7eNO_VOyszWAbUrYxA137tc';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ============================================================
+// ESTADO GLOBAL
+// ============================================================
+let usuarioAtual = null;
+let casalAtivo = null;
+let todosCasais = [];
+let filtroAgenda = 'todas';
+
+// ============================================================
+// AUTH
+// ============================================================
+async function fazerLogin() {
+  const email = document.getElementById('login-email').value;
+  const senha = document.getElementById('login-senha').value;
+  const erro = document.getElementById('login-erro');
+  erro.style.display = 'none';
+
+  const { data, error } = await db.auth.signInWithPassword({ email, password: senha });
+  if (error) { erro.textContent = 'E-mail ou senha incorretos.'; erro.style.display = 'block'; return; }
+
+  await carregarUsuario(data.user.id);
+}
+
+async function carregarUsuario(authId) {
+  const { data } = await db.from('usuarios').select('*').eq('auth_id', authId).single();
+  if (!data) return;
+  usuarioAtual = data;
+  iniciarApp();
+}
+
+function logout() {
+  db.auth.signOut();
+  document.getElementById('page-login').classList.remove('hidden');
+  document.getElementById('page-app').classList.add('hidden');
+}
+
+// ============================================================
+// INICIAR APP
+// ============================================================
+async function iniciarApp() {
+  document.getElementById('page-login').classList.add('hidden');
+  document.getElementById('page-app').classList.remove('hidden');
+
+  document.getElementById('user-nome').textContent = usuarioAtual.nome;
+  document.getElementById('user-role').textContent = usuarioAtual.perfil.replace('_', ' ');
+  document.getElementById('user-avatar').textContent = usuarioAtual.nome.split(' ').map(n=>n[0]).join('').slice(0,2);
+  document.getElementById('agenda-nome').textContent = usuarioAtual.nome;
+
+  await carregarCasais();
+}
+
+async function carregarCasais() {
+  let query = db.from('casais').select('*, usuarios!casais_wedding_planner_id_fkey(nome)');
+  if (usuarioAtual.perfil === 'wedding_planner') {
+    query = query.eq('wedding_planner_id', usuarioAtual.id);
+  } else if (usuarioAtual.perfil === 'casal') {
+    query = query.eq('id', usuarioAtual.casal_id);
+  }
+  const { data } = await query.order('data_casamento');
+  todosCasais = data || [];
+  renderSidebarCasais();
+  if (todosCasais.length > 0) selecionarCasal(todosCasais[0].id);
+}
+
+const CORES = ['#534AB7','#0F6E56','#993556','#854F0B','#185FA5'];
+const CORES_BG = ['#EEEDFE','#E1F5EE','#FBEAF0','#FAEEDA','#E6F1FB'];
+const CORES_TEXT = ['#3C3489','#085041','#72243E','#854F0B','#185FA5'];
+
+function renderSidebarCasais() {
+  const list = document.getElementById('sb-casais-list');
+  list.innerHTML = todosCasais.map((c, i) => `
+    <div class="sb-casal-item" onclick="selecionarCasal('${c.id}')" id="sb-casal-${c.id}">
+      <div class="sb-avatar" style="background:${CORES_BG[i%5]};color:${CORES_TEXT[i%5]};">${c.parceiro1_nome[0]}${c.parceiro2_nome[0]}</div>
+      <div>
+        <div class="sb-casal-nome">${c.parceiro1_nome} & ${c.parceiro2_nome}</div>
+        <div class="sb-casal-dest">${c.destino?.split(',')[0] || ''}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// SELECIONAR CASAL
+// ============================================================
+async function selecionarCasal(id) {
+  casalAtivo = todosCasais.find(c => c.id === id);
+  document.querySelectorAll('.sb-casal-item').forEach(el => el.classList.remove('active'));
+  const el = document.getElementById('sb-casal-' + id);
+  if (el) el.classList.add('active');
+
+  navegar('casal');
+
+  const dias = Math.ceil((new Date(casalAtivo.data_casamento) - new Date()) / 86400000);
+  document.getElementById('casal-title').textContent = `${casalAtivo.parceiro1_nome} & ${casalAtivo.parceiro2_nome} · ${casalAtivo.destino}`;
+  document.getElementById('casal-sub').textContent = `WP: ${casalAtivo.usuarios?.nome || '—'} · ${formatarData(casalAtivo.data_casamento)} · ${casalAtivo.num_convidados} convidados · ${dias} dias`;
+
+  await renderVisaoGeral();
+}
+
+// ============================================================
+// NAVEGAÇÃO
+// ============================================================
+function navegar(pagina) {
+  ['casal','agenda','painel'].forEach(p => {
+    const el = document.getElementById('page-' + p);
+    if (el) el.classList.toggle('hidden', p !== pagina);
+  });
+  document.querySelectorAll('.sb-nav-item').forEach(el => el.classList.remove('active'));
+  const nav = document.getElementById('nav-' + pagina);
+  if (nav) nav.classList.add('active');
+
+  if (pagina === 'agenda') renderAgenda();
+  if (pagina === 'painel') renderPainel();
+}
+
+function switchTab(tabId, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + tabId).classList.add('active');
+
+  if (tabId === 'visao-geral') renderVisaoGeral();
+  if (tabId === 'planejamento') renderPlanejamento();
+  if (tabId === 'cronograma') renderCronograma();
+  if (tabId === 'fornecedores') renderFornecedores();
+  if (tabId === 'financeiro') renderFinanceiro();
+  if (tabId === 'inspiracoes') renderInspiracoes();
+  if (tabId === 'documentos') renderDocumentos();
+  if (tabId === 'tarefas') renderTarefas();
+}
+
+// ============================================================
+// VISÃO GERAL
+// ============================================================
+async function renderVisaoGeral() {
+  if (!casalAtivo) return;
+  const [{ data: etapas }, { data: forn }, { data: parcelas }, { data: tarefas }] = await Promise.all([
+    db.from('etapas_cronograma').select('*').eq('casal_id', casalAtivo.id).order('ordem'),
+    db.from('fornecedores').select('*').eq('casal_id', casalAtivo.id),
+    db.from('parcelas').select('*').in('fornecedor_id', (await db.from('fornecedores').select('id').eq('casal_id', casalAtivo.id)).data?.map(f=>f.id) || []),
+    db.from('tarefas').select('*').eq('casal_id', casalAtivo.id).eq('tipo','casal').eq('concluida', false)
+  ]);
+
+  const dias = Math.ceil((new Date(casalAtivo.data_casamento) - new Date()) / 86400000);
+  const concluidas = (etapas||[]).filter(e=>e.status==='concluido').length;
+  const total = (etapas||[]).length || 1;
+  const pct = Math.round((concluidas/total)*100);
+  const atrasadas = (parcelas||[]).filter(p=>p.status==='atrasado');
+  const proximas = (parcelas||[]).filter(p=>p.status==='pendente').sort((a,b)=>a.data_vencimento.localeCompare(b.data_vencimento)).slice(0,3);
+
+  document.getElementById('tab-visao-geral').innerHTML = `
+    <div class="grid-4" style="margin-bottom:14px;">
+      <div class="metric"><div class="metric-label">Dias para o casamento</div><div class="metric-value">${dias}</div><div class="metric-sub">${formatarData(casalAtivo.data_casamento)}</div></div>
+      <div class="metric"><div class="metric-label">Fornecedores contratados</div><div class="metric-value">${(forn||[]).filter(f=>f.status==='contratado').length} / ${total}</div><div class="metric-sub">${total-(forn||[]).filter(f=>f.status==='contratado').length} pendentes</div></div>
+      <div class="metric"><div class="metric-label">Progresso</div><div class="metric-value">${pct}%</div><div class="metric-sub">${concluidas} de ${total} etapas</div></div>
+      <div class="metric"><div class="metric-label">Parcelas em atraso</div><div class="metric-value" style="color:${atrasadas.length>0?'#E24B4A':'#3B6D11'}">${atrasadas.length}</div><div class="metric-sub">${atrasadas.length>0?'Atenção necessária':'Tudo em dia'}</div></div>
+    </div>
+    ${atrasadas.length>0?`<div class="alert alert-warn"><i class="ti ti-alert-triangle"></i> ${atrasadas.length} pagamento(s) em atraso — regularize para manter os contratos ativos.</div>`:''}
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><i class="ti ti-list-check"></i> Progresso do planejamento</div>
+        <div class="progress-wrap" style="margin-bottom:12px;"><div class="progress-fill" style="width:${pct}%"></div></div>
+        ${(etapas||[]).map(e=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:6px;">
+            <span>${e.letra.toUpperCase()}) ${e.nome.split(' ').slice(0,4).join(' ')}...</span>
+            <span class="badge ${e.status==='concluido'?'badge-green':e.status==='em_andamento'?'badge-amber':e.status==='aguardando'?'badge-red':'badge-gray'}">${e.status==='concluido'?'Concluído':e.status==='em_andamento'?'Em andamento':e.status==='aguardando'?'Aguardando':'Pendente'}</span>
+          </div>`).join('')}
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-clock"></i> Próximos pagamentos</div>
+        ${proximas.length===0?'<div style="font-size:12px;color:#999;text-align:center;padding:16px;">Nenhum pagamento pendente</div>':proximas.map(p=>`
+          <div class="parc-item parc-pendente">
+            <div><div style="font-size:13px;font-weight:500;">${p.descricao}</div><div style="font-size:11px;color:#854F0B;">Vence ${formatarDataCurta(p.data_vencimento)}</div></div>
+            <div style="text-align:right;"><div style="font-size:13px;font-weight:500;">${formatarMoeda(p.valor, p.moeda)}</div></div>
+          </div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+// PLANEJAMENTO
+// ============================================================
+async function renderPlanejamento() {
+  if (!casalAtivo) return;
+  const { data: plan } = await db.from('planejamentos').select('*, eventos_casamento(*)').eq('casal_id', casalAtivo.id).single();
+
+  document.getElementById('tab-planejamento').innerHTML = `
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button class="btn btn-gold btn-sm" onclick="mostrarSubTab('plan-local')"><i class="ti ti-map-pin"></i> Local e data</button>
+      <button class="btn btn-sm" onclick="mostrarSubTab('plan-hosp')"><i class="ti ti-bed"></i> Hospedagem</button>
+      <button class="btn btn-sm" onclick="mostrarSubTab('plan-docs')"><i class="ti ti-files"></i> Contratos</button>
+    </div>
+    <div id="plan-local">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title"><i class="ti ti-map-pin"></i> Local do casamento</div>
+          <div class="field"><label>Hotel / espaço *</label><input id="plan-local-nome" value="${plan?.local_nome||''}" /></div>
+          <div class="field"><label>Destino *</label><input id="plan-local-destino" value="${plan?.local_destino||''}" /></div>
+          <div class="field"><label>Espaço específico</label><input id="plan-local-espaco" value="${plan?.local_espaco||''}" /></div>
+          <div class="field"><label>Observações</label><textarea id="plan-local-obs">${plan?.local_observacoes||''}</textarea></div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span class="badge ${plan?.status_local==='confirmado'?'badge-green':plan?.status_local==='em_negociacao'?'badge-amber':'badge-gray'}">${plan?.status_local==='confirmado'?'✓ Confirmado':plan?.status_local==='em_negociacao'?'Em negociação':'Pendente'}</span>
+            <select id="plan-status-local" style="width:auto;">
+              <option value="pendente" ${plan?.status_local==='pendente'?'selected':''}>Pendente</option>
+              <option value="em_negociacao" ${plan?.status_local==='em_negociacao'?'selected':''}>Em negociação</option>
+              <option value="confirmado" ${plan?.status_local==='confirmado'?'selected':''}>Confirmado</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:14px;">
+            <div class="card-title"><i class="ti ti-calendar-event"></i> Data e horários</div>
+            <div class="field"><label>Data do casamento *</label><input type="date" id="plan-data" value="${plan?.data_casamento||casalAtivo.data_casamento||''}" /></div>
+            <div class="grid-2" style="gap:8px;">
+              <div class="field"><label>Cerimônia</label><input type="time" id="plan-hor-ceri" value="${plan?.horario_cerimonia||''}" /></div>
+              <div class="field"><label>Festa/Jantar</label><input type="time" id="plan-hor-festa" value="${plan?.horario_festa||''}" /></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><i class="ti ti-list"></i> Eventos</div>
+            ${(plan?.eventos_casamento||[]).map(ev=>`
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:8px;">
+                <span>${ev.nome}</span>
+                <span class="badge ${ev.status==='confirmado'?'badge-green':ev.status==='em_avaliacao'?'badge-amber':'badge-red'}">${ev.status==='confirmado'?'Confirmado':ev.status==='em_avaliacao'?'Em avaliação':'Cancelado'}</span>
+              </div>`).join('')}
+            ${!plan?.eventos_casamento?.length?'<div style="font-size:12px;color:#999;">Nenhum evento cadastrado</div>':''}
+          </div>
+        </div>
+      </div>
+      <div style="text-align:right;margin-top:8px;"><button class="btn btn-gold" onclick="salvarPlanejamento()"><i class="ti ti-device-floppy"></i> Salvar</button></div>
+    </div>
+    <div id="plan-hosp" class="hidden">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title"><i class="ti ti-bed"></i> Período de hospedagem</div>
+          <div class="field"><label>Check-in sugerido *</label><input type="date" id="plan-checkin" value="${plan?.check_in||''}" /></div>
+          <div class="field"><label>Check-out sugerido *</label><input type="date" id="plan-checkout" value="${plan?.check_out||''}" /></div>
+          <div class="field"><label>Tipo de hospedagem</label>
+            <select id="plan-tipo-hosp">
+              <option ${plan?.tipo_hospedagem==='All-Inclusive'?'selected':''}>All-Inclusive</option>
+              <option ${plan?.tipo_hospedagem==='Meia pensão'?'selected':''}>Meia pensão</option>
+              <option ${plan?.tipo_hospedagem==='Só café'?'selected':''}>Só café da manhã</option>
+              <option ${plan?.tipo_hospedagem==='Sem refeições'?'selected':''}>Sem refeições</option>
+            </select>
+          </div>
+          <div class="field"><label>Hotel dos convidados</label><input id="plan-hotel-conv" value="${plan?.hotel_convidados||''}" /></div>
+          <div class="field"><label>Observações</label><textarea id="plan-obs-hosp">${plan?.observacoes_hospedagem||''}</textarea></div>
+          <button class="btn btn-gold" onclick="salvarPlanejamento()"><i class="ti ti-device-floppy"></i> Salvar</button>
+        </div>
+        <div class="card">
+          <div class="card-title"><i class="ti ti-info-circle"></i> Resumo</div>
+          <div style="font-size:13px;color:#555;line-height:1.8;">
+            Check-in: <strong>${plan?.check_in ? formatarData(plan.check_in) : '—'}</strong><br>
+            Check-out: <strong>${plan?.check_out ? formatarData(plan.check_out) : '—'}</strong><br>
+            Tipo: <strong>${plan?.tipo_hospedagem || '—'}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="plan-docs" class="hidden">
+      <div class="card">
+        <div class="card-title"><i class="ti ti-files"></i> Contratos do planejamento</div>
+        <div class="alert alert-info"><i class="ti ti-info-circle"></i> Contratos do local e hospedagem. Contratos de fornecedores ficam na aba Fornecedores.</div>
+        <div class="upload-zone" onclick="alert('Upload disponível após integração com Supabase Storage')">
+          <i class="ti ti-upload"></i>
+          <p style="font-size:13px;color:#999;">Clique para fazer upload de contratos</p>
+          <p style="font-size:11px;color:#bbb;margin-top:4px;">PDF, DOC · máx 20MB</p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function mostrarSubTab(id) {
+  ['plan-local','plan-hosp','plan-docs'].forEach(s => {
+    const el = document.getElementById(s);
+    if (el) el.classList.toggle('hidden', s !== id);
+  });
+}
+
+async function salvarPlanejamento() {
+  if (!casalAtivo) return;
+  const dados = {
+    casal_id: casalAtivo.id,
+    local_nome: document.getElementById('plan-local-nome')?.value,
+    local_destino: document.getElementById('plan-local-destino')?.value,
+    local_espaco: document.getElementById('plan-local-espaco')?.value,
+    local_observacoes: document.getElementById('plan-local-obs')?.value,
+    status_local: document.getElementById('plan-status-local')?.value,
+    data_casamento: document.getElementById('plan-data')?.value,
+    horario_cerimonia: document.getElementById('plan-hor-ceri')?.value || null,
+    horario_festa: document.getElementById('plan-hor-festa')?.value || null,
+    check_in: document.getElementById('plan-checkin')?.value || null,
+    check_out: document.getElementById('plan-checkout')?.value || null,
+    tipo_hospedagem: document.getElementById('plan-tipo-hosp')?.value,
+    hotel_convidados: document.getElementById('plan-hotel-conv')?.value,
+    observacoes_hospedagem: document.getElementById('plan-obs-hosp')?.value,
+  };
+  const { data: existing } = await db.from('planejamentos').select('id').eq('casal_id', casalAtivo.id).single();
+  if (existing) {
+    await db.from('planejamentos').update(dados).eq('casal_id', casalAtivo.id);
+  } else {
+    await db.from('planejamentos').insert(dados);
+  }
+  alert('Planejamento salvo!');
+}
+
+// ============================================================
+// CRONOGRAMA
+// ============================================================
+async function renderCronograma() {
+  if (!casalAtivo) return;
+  const { data: etapas } = await db.from('etapas_cronograma').select('*').eq('casal_id', casalAtivo.id).order('ordem');
+
+  document.getElementById('tab-cronograma').innerHTML = `
+    <div class="card">
+      <div class="card-title"><i class="ti ti-list-numbers"></i> Cronograma de contratação · Caribe</div>
+      ${(etapas||[]).map(e=>`
+        <div class="etapa-item">
+          <div class="etapa-letra ${e.status==='concluido'?'badge-green':e.status==='em_andamento'?'badge-amber':e.status==='aguardando'?'badge-red':'badge-gray'}">
+            ${e.status==='concluido'?'<i class="ti ti-check" style="font-size:13px;"></i>':e.letra.toUpperCase()}
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:500;">${e.nome}</div>
+            <div style="font-size:11px;color:#999;margin-top:2px;">${e.descricao||''}</div>
+            ${e.fornecedor_contratado?`<div style="font-size:11px;color:#B8945A;margin-top:2px;">Contratado: ${e.fornecedor_contratado}</div>`:''}
+            ${e.excecao?`<div style="font-size:11px;color:#854F0B;margin-top:2px;">Exceção: ${e.excecao}</div>`:''}
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="badge ${e.status==='concluido'?'badge-green':e.status==='em_andamento'?'badge-amber':e.status==='aguardando'?'badge-red':'badge-gray'}">${e.status==='concluido'?'Concluído':e.status==='em_andamento'?'Em andamento':e.status==='aguardando'?'Aguardando':'Pendente'}</span>
+            <select onchange="atualizarEtapa('${e.id}', this.value)" style="width:auto;font-size:12px;">
+              <option value="concluido" ${e.status==='concluido'?'selected':''}>Concluído</option>
+              <option value="em_andamento" ${e.status==='em_andamento'?'selected':''}>Em andamento</option>
+              <option value="pendente" ${e.status==='pendente'?'selected':''}>Pendente</option>
+              <option value="aguardando" ${e.status==='aguardando'?'selected':''}>Aguardando</option>
+            </select>
+          </div>
+        </div>`).join('')}
+    </div>
+  `;
+}
+
+async function atualizarEtapa(id, status) {
+  await db.from('etapas_cronograma').update({ status }).eq('id', id);
+}
+
+// ============================================================
+// FORNECEDORES
+// ============================================================
+async function renderFornecedores() {
+  if (!casalAtivo) return;
+  const { data: forn } = await db.from('fornecedores').select('*').eq('casal_id', casalAtivo.id);
+
+  document.getElementById('tab-fornecedores').innerHTML = `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div class="card-title" style="margin-bottom:0;"><i class="ti ti-briefcase"></i> Fornecedores</div>
+        <button class="btn btn-gold btn-sm" onclick="abrirNovoFornecedor()"><i class="ti ti-plus"></i> Adicionar</button>
+      </div>
+      <div id="form-forn" class="hidden" style="background:#f8f8f8;border-radius:10px;padding:14px;margin-bottom:14px;">
+        <div class="grid-2" style="gap:8px;">
+          <div class="field"><label>Categoria *</label><input id="forn-cat" placeholder="Ex: b) Foto e Vídeo" /></div>
+          <div class="field"><label>Nome *</label><input id="forn-nome" placeholder="Nome do fornecedor" /></div>
+          <div class="field"><label>Cidade</label><input id="forn-cidade" placeholder="Cidade, Estado" /></div>
+          <div style="display:flex;gap:8px;">
+            <div class="field" style="flex:1;"><label>Valor base *</label><input type="number" id="forn-valor" /></div>
+            <div class="field"><label>Moeda</label><select id="forn-moeda" style="width:auto;"><option>BRL</option><option>USD</option><option>MXN</option><option>EUR</option><option>ARS</option></select></div>
+          </div>
+          <div class="field"><label>Custo adicional</label><input type="number" id="forn-adicional" /></div>
+          <div class="field"><label>Descrição do adicional</label><input id="forn-desc-adicional" placeholder="Ex: Viagem e hospedagem" /></div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+          <button class="btn btn-sm" onclick="document.getElementById('form-forn').classList.add('hidden')">Cancelar</button>
+          <button class="btn btn-gold btn-sm" onclick="salvarFornecedor()">Salvar</button>
+        </div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead><tr style="border-bottom:1px solid #eee;">
+          <th style="text-align:left;padding:6px 8px;color:#999;font-weight:500;">Categoria</th>
+          <th style="text-align:left;padding:6px 8px;color:#999;font-weight:500;">Fornecedor</th>
+          <th style="text-align:left;padding:6px 8px;color:#999;font-weight:500;">Valor base</th>
+          <th style="text-align:left;padding:6px 8px;color:#999;font-weight:500;">Adicional</th>
+          <th style="text-align:left;padding:6px 8px;color:#999;font-weight:500;">Total</th>
+          <th style="text-align:left;padding:6px 8px;color:#999;font-weight:500;">Status</th>
+        </tr></thead>
+        <tbody>
+          ${(forn||[]).map(f=>`
+            <tr style="border-bottom:1px solid #f5f5f5;">
+              <td style="padding:10px 8px;color:#999;">${f.categoria}</td>
+              <td style="padding:10px 8px;"><div style="font-weight:500;">${f.nome}</div><div style="color:#999;">${f.cidade||''}</div></td>
+              <td style="padding:10px 8px;">${formatarMoeda(f.valor_base, f.moeda)} <span style="font-size:10px;background:#f0f0f0;border-radius:4px;padding:1px 5px;">${f.moeda}</span></td>
+              <td style="padding:10px 8px;color:#999;">${f.custo_adicional?`+ ${formatarMoeda(f.custo_adicional, f.moeda)}<br><span style="font-size:10px;">${f.descricao_adicional||''}</span>`:'—'}</td>
+              <td style="padding:10px 8px;font-weight:500;">${formatarMoeda((f.valor_base||0)+(f.custo_adicional||0), f.moeda)}</td>
+              <td style="padding:10px 8px;"><span class="badge ${f.status==='contratado'?'badge-green':f.status==='em_negociacao'?'badge-amber':'badge-red'}">${f.status==='contratado'?'Contratado':f.status==='em_negociacao'?'Em negociação':'Cancelado'}</span></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+      ${!forn?.length?'<div style="text-align:center;padding:24px;color:#999;font-size:13px;">Nenhum fornecedor adicionado ainda</div>':''}
+    </div>
+  `;
+}
+
+function abrirNovoFornecedor() {
+  const form = document.getElementById('form-forn');
+  if (form) form.classList.toggle('hidden');
+}
+
+async function salvarFornecedor() {
+  if (!casalAtivo) return;
+  await db.from('fornecedores').insert({
+    casal_id: casalAtivo.id,
+    categoria: document.getElementById('forn-cat').value,
+    nome: document.getElementById('forn-nome').value,
+    cidade: document.getElementById('forn-cidade').value,
+    valor_base: Number(document.getElementById('forn-valor').value) || 0,
+    moeda: document.getElementById('forn-moeda').value,
+    custo_adicional: Number(document.getElementById('forn-adicional').value) || null,
+    descricao_adicional: document.getElementById('forn-desc-adicional').value || null,
+    status: 'em_negociacao',
+  });
+  await renderFornecedores();
+}
+
+// ============================================================
+// FINANCEIRO
+// ============================================================
+async function renderFinanceiro() {
+  if (!casalAtivo) return;
+  const { data: forn } = await db.from('fornecedores').select('*').eq('casal_id', casalAtivo.id);
+  const fornIds = (forn||[]).map(f=>f.id);
+  const { data: parcelas } = fornIds.length ? await db.from('parcelas').select('*').in('fornecedor_id', fornIds) : { data: [] };
+
+  const pagas = (parcelas||[]).filter(p=>p.status==='pago').length;
+  const atrasadas = (parcelas||[]).filter(p=>p.status==='atrasado').length;
+  const pendentes = (parcelas||[]).filter(p=>p.status==='pendente').length;
+
+  document.getElementById('tab-financeiro').innerHTML = `
+    <div class="grid-3" style="margin-bottom:14px;">
+      <div class="metric"><div class="metric-label">Pagas</div><div class="metric-value" style="color:#3B6D11;">${pagas}</div><div class="metric-sub">parcelas quitadas</div></div>
+      <div class="metric"><div class="metric-label">Pendentes</div><div class="metric-value" style="color:#854F0B;">${pendentes}</div><div class="metric-sub">a pagar</div></div>
+      <div class="metric"><div class="metric-label">Em atraso</div><div class="metric-value" style="color:${atrasadas>0?'#E24B4A':'#3B6D11'}">${atrasadas}</div><div class="metric-sub">${atrasadas>0?'Regularize':'Tudo em dia'}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-receipt"></i> Parcelas por fornecedor</div>
+      ${(forn||[]).map(f=>{
+        const fp = (parcelas||[]).filter(p=>p.fornecedor_id===f.id);
+        return `
+          <div style="margin-bottom:16px;">
+            <div style="font-size:12px;font-weight:500;color:#999;margin-bottom:6px;display:flex;justify-content:space-between;">
+              <span>${f.nome} · ${f.categoria}</span>
+              <button class="btn btn-sm" onclick="abrirNovaParcela('${f.id}')"><i class="ti ti-plus"></i> Parcela</button>
+            </div>
+            <div id="form-parc-${f.id}" class="hidden" style="background:#f8f8f8;border-radius:8px;padding:10px;margin-bottom:8px;">
+              <div class="grid-2" style="gap:8px;margin-bottom:8px;">
+                <div class="field"><label>Descrição</label><input id="parc-desc-${f.id}" placeholder="Ex: Parcela 1/3 · Sinal" /></div>
+                <div style="display:flex;gap:6px;">
+                  <div class="field" style="flex:1;"><label>Valor</label><input type="number" id="parc-val-${f.id}" /></div>
+                  <div class="field"><label>Moeda</label><select id="parc-moe-${f.id}" style="width:auto;"><option>BRL</option><option>USD</option><option>MXN</option><option>EUR</option></select></div>
+                </div>
+                <div class="field"><label>Vencimento</label><input type="date" id="parc-data-${f.id}" /></div>
+              </div>
+              <div style="display:flex;gap:6px;justify-content:flex-end;">
+                <button class="btn btn-sm" onclick="document.getElementById('form-parc-${f.id}').classList.add('hidden')">Cancelar</button>
+                <button class="btn btn-gold btn-sm" onclick="salvarParcela('${f.id}')">Salvar</button>
+              </div>
+            </div>
+            ${fp.map(p=>`
+              <div class="parc-item parc-${p.status}">
+                <div>
+                  <div style="font-size:13px;font-weight:500;">${p.descricao}</div>
+                  <div style="font-size:11px;color:${p.status==='pago'?'#3B6D11':p.status==='atrasado'?'#A32D2D':'#854F0B'};">
+                    ${p.status==='pago'?'Pago em '+formatarData(p.data_vencimento):(p.status==='atrasado'?'Venceu':'Vence')+' '+formatarData(p.data_vencimento)}
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div style="text-align:right;">
+                    <div style="font-size:13px;font-weight:500;">${formatarMoeda(p.valor, p.moeda)}</div>
+                    <div style="font-size:11px;color:${p.status==='pago'?'#3B6D11':p.status==='atrasado'?'#A32D2D':'#854F0B'};">${p.status==='pago'?'Pago':p.status==='atrasado'?'Atrasado':'Pendente'}</div>
+                  </div>
+                  ${p.status!=='pago'?`<button class="btn btn-sm" onclick="marcarPago('${p.id}')"><i class="ti ti-check"></i> Pago</button>`:''}
+                </div>
+              </div>`).join('')}
+            ${!fp.length?'<div style="font-size:12px;color:#bbb;padding:8px;">Nenhuma parcela cadastrada</div>':''}
+          </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function abrirNovaParcela(fornId) {
+  document.getElementById('form-parc-'+fornId).classList.toggle('hidden');
+}
+
+async function salvarParcela(fornId) {
+  await db.from('parcelas').insert({
+    fornecedor_id: fornId,
+    descricao: document.getElementById('parc-desc-'+fornId).value,
+    valor: Number(document.getElementById('parc-val-'+fornId).value),
+    moeda: document.getElementById('parc-moe-'+fornId).value,
+    data_vencimento: document.getElementById('parc-data-'+fornId).value,
+    status: 'pendente',
+  });
+  await renderFinanceiro();
+}
+
+async function marcarPago(parcelaId) {
+  await db.from('parcelas').update({ status: 'pago', pago_em: new Date().toISOString() }).eq('id', parcelaId);
+  await renderFinanceiro();
+}
+
+// ============================================================
+// INSPIRAÇÕES
+// ============================================================
+async function renderInspiracoes() {
+  if (!casalAtivo) return;
+  const { data: insp } = await db.from('inspiracoes').select('*').eq('casal_id', casalAtivo.id);
+
+  document.getElementById('tab-inspiracoes').innerHTML = `
+    <div class="card">
+      <div class="card-title"><i class="ti ti-heart"></i> Moodboard do casal</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
+        ${(insp||[]).map(i=>`
+          <div style="border:1px solid #eee;border-radius:10px;overflow:hidden;">
+            <div style="height:80px;background:#f8f8f8;display:flex;align-items:center;justify-content:center;">
+              <i class="ti ti-${i.tipo==='link'?'link':'photo'}" style="font-size:24px;color:#ddd;"></i>
+            </div>
+            <div style="padding:8px 10px;">
+              <div style="font-size:11px;color:#999;">${i.categoria||''}</div>
+              <div style="font-size:12px;font-weight:500;">${i.titulo}</div>
+              ${i.url?`<a href="${i.url}" target="_blank" style="font-size:11px;color:#B8945A;text-decoration:none;">Ver link →</a>`:''}
+            </div>
+          </div>`).join('')}
+        <div style="border:2px dashed #ddd;border-radius:10px;display:flex;align-items:center;justify-content:center;min-height:120px;cursor:pointer;" onclick="document.getElementById('form-insp').classList.toggle('hidden')">
+          <div style="text-align:center;"><i class="ti ti-plus" style="font-size:20px;color:#ddd;display:block;margin-bottom:4px;"></i><span style="font-size:11px;color:#bbb;">Adicionar</span></div>
+        </div>
+      </div>
+      <div id="form-insp" class="hidden" style="background:#f8f8f8;border-radius:10px;padding:12px;">
+        <div class="grid-2" style="gap:8px;margin-bottom:8px;">
+          <div class="field"><label>Título</label><input id="insp-titulo" placeholder="Ex: Arranjos florais brancos" /></div>
+          <div class="field"><label>Categoria</label><input id="insp-cat" placeholder="Ex: Decoração, Vestido..." /></div>
+          <div class="field"><label>Link (Pinterest, Instagram...)</label><input id="insp-url" placeholder="https://..." /></div>
+        </div>
+        <div style="display:flex;gap:6px;justify-content:flex-end;">
+          <button class="btn btn-sm" onclick="document.getElementById('form-insp').classList.add('hidden')">Cancelar</button>
+          <button class="btn btn-gold btn-sm" onclick="salvarInspiracao()">Salvar</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function salvarInspiracao() {
+  if (!casalAtivo) return;
+  const url = document.getElementById('insp-url').value;
+  await db.from('inspiracoes').insert({
+    casal_id: casalAtivo.id,
+    tipo: url ? 'link' : 'foto',
+    titulo: document.getElementById('insp-titulo').value,
+    categoria: document.getElementById('insp-cat').value,
+    url: url || null,
+  });
+  await renderInspiracoes();
+}
+
+// ============================================================
+// DOCUMENTOS
+// ============================================================
+async function renderDocumentos() {
+  if (!casalAtivo) return;
+  const { data: docs } = await db.from('documentos').select('*, fornecedores(nome)').eq('casal_id', casalAtivo.id);
+
+  document.getElementById('tab-documentos').innerHTML = `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div class="card-title" style="margin-bottom:0;"><i class="ti ti-files"></i> Contratos e documentos</div>
+      </div>
+      ${['contrato','comprovante','proposta','outro'].map(cat=>{
+        const grupo = (docs||[]).filter(d=>d.categoria===cat);
+        if (!grupo.length) return '';
+        return `<div style="margin-bottom:14px;">
+          <div style="font-size:12px;font-weight:500;color:#999;margin-bottom:6px;">${cat==='contrato'?'Contratos':cat==='comprovante'?'Comprovantes':cat==='proposta'?'Propostas':'Outros'}</div>
+          ${grupo.map(d=>`
+            <div class="doc-item">
+              <div class="doc-icon"><i class="ti ti-file-text"></i></div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.nome}</div>
+                <div style="font-size:11px;color:#999;">${d.fornecedores?.nome||''} · ${d.enviado_por} · ${d.tamanho||''} · ${d.created_at?.split('T')[0]||''}</div>
+              </div>
+              <button class="btn btn-sm"><i class="ti ti-download"></i></button>
+            </div>`).join('')}
+        </div>`;
+      }).join('')}
+      <div class="upload-zone" onclick="alert('Upload disponível após integração com Supabase Storage')">
+        <i class="ti ti-upload"></i>
+        <p style="font-size:13px;color:#999;">Clique para fazer upload de documentos</p>
+        <p style="font-size:11px;color:#bbb;margin-top:4px;">PDF, DOC · máx 20MB</p>
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+// TAREFAS
+// ============================================================
+async function renderTarefas() {
+  if (!casalAtivo) return;
+  const { data: tarefas } = await db.from('tarefas').select('*').eq('casal_id', casalAtivo.id).order('prazo');
+
+  const casal = (tarefas||[]).filter(t=>t.tipo==='casal');
+  const internas = (tarefas||[]).filter(t=>t.tipo==='interna');
+
+  const renderLista = (lista) => lista.map(t=>`
+    <div class="task-item">
+      <div class="task-check ${t.concluida?'done':''}" onclick="toggleTarefa('${t.id}', ${t.concluida})">
+        ${t.concluida?'<i class="ti ti-check" style="font-size:11px;color:#2C1A0E;"></i>':''}
+      </div>
+      <div style="flex:1;">
+        <div class="task-nome ${t.concluida?'done':''}">${t.descricao}</div>
+        <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
+          <span style="font-size:11px;color:${statusData(t.prazo, t.concluida)};">${formatarDataCurta(t.prazo)}</span>
+          <span class="badge ${t.criado_por_perfil==='wp'?'badge-purple':t.criado_por_perfil==='parceiro1'?'badge-green':'badge-red'}">${t.criado_por_perfil==='wp'?'WP':t.criado_por_perfil==='parceiro1'?'P1':'P2'}</span>
+          ${t.tipo==='interna'?`<span class="badge badge-gray"><i class="ti ti-lock" style="font-size:9px;"></i> ${t.visibilidade==='privada'?'Só para mim':t.visibilidade==='agendada'?'Agendada':'Visível'}</span>`:''}
+        </div>
+      </div>
+    </div>`).join('') || '<div style="font-size:12px;color:#bbb;text-align:center;padding:16px;">Nenhuma tarefa</div>';
+
+  document.getElementById('tab-tarefas').innerHTML = `
+    <div style="text-align:right;margin-bottom:12px;">
+      <button class="btn btn-gold btn-sm" onclick="document.getElementById('form-tarefa').classList.toggle('hidden')"><i class="ti ti-plus"></i> Nova tarefa</button>
+    </div>
+    <div id="form-tarefa" class="hidden card" style="margin-bottom:14px;">
+      <div class="grid-2" style="gap:8px;">
+        <input id="tar-desc" placeholder="Descrição da tarefa *" style="grid-column:1/-1;" />
+        <div class="field"><label>Prazo *</label><input type="date" id="tar-prazo" /></div>
+        <div class="field"><label>Tipo</label>
+          <select id="tar-tipo">
+            <option value="casal">Tarefa do casal</option>
+            <option value="interna">Tarefa interna</option>
+          </select>
+        </div>
+        <div class="field"><label>Visibilidade</label>
+          <select id="tar-vis">
+            <option value="publica">Visível ao casal</option>
+            <option value="privada">Só para mim</option>
+            <option value="agendada">A partir de uma data</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px;">
+        <button class="btn btn-sm" onclick="document.getElementById('form-tarefa').classList.add('hidden')">Cancelar</button>
+        <button class="btn btn-gold btn-sm" onclick="salvarTarefa()">Salvar</button>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><i class="ti ti-users"></i> Tarefas do casal</div>
+        ${renderLista(casal)}
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-lock"></i> Minhas tarefas internas</div>
+        ${renderLista(internas)}
+      </div>
+    </div>
+  `;
+}
+
+async function salvarTarefa() {
+  if (!casalAtivo) return;
+  await db.from('tarefas').insert({
+    casal_id: casalAtivo.id,
+    descricao: document.getElementById('tar-desc').value,
+    prazo: document.getElementById('tar-prazo').value,
+    tipo: document.getElementById('tar-tipo').value,
+    criado_por: usuarioAtual.nome,
+    criado_por_perfil: 'wp',
+    visibilidade: document.getElementById('tar-vis').value,
+    concluida: false,
+  });
+  await renderTarefas();
+}
+
+async function toggleTarefa(id, atual) {
+  await db.from('tarefas').update({ concluida: !atual }).eq('id', id);
+  await renderTarefas();
+}
+
+// ============================================================
+// AGENDA
+// ============================================================
+async function renderAgenda() {
+  let query = db.from('tarefas').select('*, casais(parceiro1_nome, parceiro2_nome)');
+  if (usuarioAtual.perfil === 'wedding_planner') {
+    const { data: meusCasais } = await db.from('casais').select('id').eq('wedding_planner_id', usuarioAtual.id);
+    const ids = (meusCasais||[]).map(c=>c.id);
+    if (!ids.length) { document.getElementById('agenda-content').innerHTML = '<div style="text-align:center;color:#999;padding:32px;">Nenhuma tarefa</div>'; return; }
+    query = query.in('casal_id', ids);
+  }
+  if (filtroAgenda === 'casal') query = query.eq('tipo','casal');
+  if (filtroAgenda === 'interna') query = query.eq('tipo','interna');
+  const { data: tarefas } = await query.order('prazo');
+
+  const hoje = new Date().toISOString().split('T')[0];
+  const filtradas = filtroAgenda === 'atrasadas'
+    ? (tarefas||[]).filter(t=>!t.concluida && t.prazo < hoje)
+    : tarefas||[];
+
+  document.getElementById('agenda-atrasadas').textContent = (tarefas||[]).filter(t=>!t.concluida && t.prazo < hoje).length;
+  document.getElementById('agenda-abertas').textContent = (tarefas||[]).filter(t=>!t.concluida).length;
+
+  const grupos = {};
+  filtradas.forEach(t => {
+    const key = t.concluida ? 'Concluídas' : t.prazo < hoje ? 'Atrasadas' : t.prazo === hoje ? 'Hoje' : t.prazo;
+    if (!grupos[key]) grupos[key] = [];
+    grupos[key].push(t);
+  });
+
+  const CORES_BADGE = ['badge-purple','badge-green','badge-red','badge-amber'];
+  document.getElementById('agenda-content').innerHTML = Object.entries(grupos).map(([grupo, lista]) => `
+    <div style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="font-size:12px;font-weight:500;color:${grupo==='Atrasadas'?'#E24B4A':grupo==='Hoje'?'#854F0B':'#666'};">
+          ${grupo==='Atrasadas'?'⚠️ Atrasadas':grupo==='Hoje'?'📅 Hoje':grupo==='Concluídas'?'✓ Concluídas':'📅 '+formatarDataCurta(grupo)}
+        </span>
+        <span class="badge ${grupo==='Atrasadas'?'badge-red':grupo==='Hoje'?'badge-amber':'badge-gray'}">${lista.length}</span>
+        <div style="flex:1;height:1px;background:#e0e0e0;"></div>
+      </div>
+      ${lista.map((t,i) => `
+        <div class="task-item" style="border-left:3px solid ${grupo==='Atrasadas'?'#E24B4A':grupo==='Hoje'?'#C9A96E':'#eee'};border-radius:0 8px 8px 0;">
+          <div class="task-check ${t.concluida?'done':''}" onclick="toggleTarefaAgenda('${t.id}', ${t.concluida})">
+            ${t.concluida?'<i class="ti ti-check" style="font-size:11px;color:#2C1A0E;"></i>':''}
+          </div>
+          <div style="flex:1;">
+            <div class="task-nome ${t.concluida?'done':''}">${t.descricao}</div>
+            <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
+              ${t.casais?`<span class="badge ${CORES_BADGE[i%4]}">${t.casais.parceiro1_nome} & ${t.casais.parceiro2_nome}</span>`:''}
+              <span class="badge ${t.tipo==='interna'?'badge-gray':'badge-blue'}">${t.tipo==='interna'?'Interna':'Casal'}</span>
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>`).join('') || '<div style="text-align:center;color:#999;padding:32px;font-size:13px;">Nenhuma tarefa encontrada</div>';
+}
+
+async function toggleTarefaAgenda(id, atual) {
+  await db.from('tarefas').update({ concluida: !atual }).eq('id', id);
+  await renderAgenda();
+}
+
+function filtrarAgenda(filtro, btn) {
+  filtroAgenda = filtro;
+  document.querySelectorAll('.active-filter').forEach(b => { b.classList.remove('btn-gold'); b.classList.remove('active-filter'); });
+  btn.classList.add('btn-gold'); btn.classList.add('active-filter');
+  renderAgenda();
+}
+
+// ============================================================
+// PAINEL DIRETORIA
+// ============================================================
+async function renderPainel() {
+  const { data: casais } = await db.from('casais').select('*, usuarios!casais_wedding_planner_id_fkey(id, nome)');
+  const { data: wps } = await db.from('usuarios').select('*').eq('perfil','wedding_planner');
+
+  document.getElementById('painel-casais').textContent = (casais||[]).length;
+  const CORES_WP = ['badge-purple','badge-green','badge-red','badge-amber','badge-blue'];
+
+  document.getElementById('painel-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+      ${(wps||[]).map((wp,wi)=>{
+        const meusCasais = (casais||[]).filter(c=>c.wedding_planner_id===wp.id);
+        return `
+          <div class="wp-card">
+            <div class="wp-header">
+              <div class="sb-avatar badge ${CORES_WP[wi%5]}" style="width:36px;height:36px;font-size:12px;">${wp.nome.split(' ').map(n=>n[0]).join('')}</div>
+              <div><div style="font-size:14px;font-weight:500;">${wp.nome}</div><div style="font-size:12px;color:#999;">${meusCasais.length} casal${meusCasais.length!==1?'is':''}</div></div>
+            </div>
+            ${meusCasais.map((c,ci)=>`
+              <div class="wp-casal-row" onclick="selecionarCasal('${c.id}')" style="cursor:pointer;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div class="sb-avatar badge ${CORES_WP[ci%5]}" style="width:26px;height:26px;font-size:10px;">${c.parceiro1_nome[0]}${c.parceiro2_nome[0]}</div>
+                  <div><div style="font-size:13px;font-weight:500;">${c.parceiro1_nome} & ${c.parceiro2_nome}</div><div style="font-size:11px;color:#999;">${c.destino?.split(',')[0]||''}</div></div>
+                </div>
+                <div style="font-size:11px;color:#999;">${c.data_casamento?formatarDataCurta(c.data_casamento):''}</div>
+              </div>`).join('')}
+            ${!meusCasais.length?'<div style="padding:12px 16px;font-size:12px;color:#bbb;">Nenhum casal</div>':''}
+          </div>`;
+      }).join('')}
+    </div>`;
+}
+
+// ============================================================
+// UTILITÁRIOS
+// ============================================================
+function formatarData(data) {
+  if (!data) return '—';
+  const meses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  const [ano,mes,dia] = data.split('T')[0].split('-');
+  return `${dia} ${meses[parseInt(mes)-1]} ${ano}`;
+}
+
+function formatarDataCurta(data) {
+  if (!data) return '—';
+  const meses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  const [,mes,dia] = data.split('T')[0].split('-');
+  return `${dia} ${meses[parseInt(mes)-1]}`;
+}
+
+function formatarMoeda(valor, moeda) {
+  const simbolos = { BRL:'R$', USD:'USD', MXN:'MXN', EUR:'€', ARS:'ARS' };
+  return `${simbolos[moeda]||moeda} ${Number(valor||0).toLocaleString('pt-BR')}`;
+}
+
+function statusData(data, concluida) {
+  if (concluida) return '#3B6D11';
+  const hoje = new Date().toISOString().split('T')[0];
+  if (data < hoje) return '#E24B4A';
+  if (data === hoje) return '#854F0B';
+  return '#999';
+}
+
+// ============================================================
+// VERIFICAR SESSÃO AO CARREGAR
+// ============================================================
+window.addEventListener('load', async () => {
+  const { data: { session } } = await db.auth.getSession();
+  if (session?.user) {
+    await carregarUsuario(session.user.id);
+  }
+});
+</script>
+</body>
+</html>
