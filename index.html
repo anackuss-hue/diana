@@ -145,6 +145,24 @@
     .hidden { display: none !important; }
     .section { display: none; }
     .section.active { display: block; }
+  
+    /* BLOCO EXPANDÍVEL */
+    .etapa-item { cursor: pointer; }
+    .etapa-expand { display: none; margin-top: 12px; border-top: 1px solid #f0f0f0; padding-top: 12px; }
+    .etapa-expand.open { display: block; }
+    .etapa-desc-box { background: #FAEEDA; border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #854F0B; line-height: 1.7; margin-bottom: 14px; }
+    .checklist-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border: 1px solid #eee; border-radius: 10px; margin-bottom: 6px; transition: all 0.15s; }
+    .checklist-item:hover { border-color: #ddd; background: #fafafa; }
+    .checklist-nome { font-size: 13px; font-weight: 500; color: #1a1a1a; flex: 1; }
+    .checklist-sub { font-size: 11px; color: #999; margin-top: 2px; }
+    .checklist-opcoes { display: flex; gap: 6px; flex-shrink: 0; }
+    .chk-btn { padding: 4px 10px; font-size: 11px; border-radius: 20px; border: 1px solid #ddd; background: #fff; cursor: pointer; font-family: inherit; transition: all 0.15s; white-space: nowrap; }
+    .chk-btn:hover { border-color: #C9A96E; }
+    .chk-btn.interesse { background: #EAF3DE; color: #3B6D11; border-color: #3B6D11; font-weight: 500; }
+    .chk-btn.nao-interesse { background: #FCEBEB; color: #A32D2D; border-color: #A32D2D; font-weight: 500; }
+    .chk-btn.indefinido { background: #FAEEDA; color: #854F0B; border-color: #854F0B; font-weight: 500; }
+    .checklist-secao { font-size: 11px; font-weight: 600; color: #B8945A; text-transform: uppercase; letter-spacing: 0.5px; margin: 14px 0 6px; }
+
   </style>
 </head>
 <body>
@@ -188,7 +206,10 @@
         <i class="ti ti-users"></i> Painel diretoria
       </div>
     </div>
-    <div class="sb-section-label">Meus casais</div>
+    <div class="sb-section-label" style="display:flex;align-items:center;justify-content:space-between;padding-right:10px;">
+      Meus casais
+      <button onclick="abrirNovoCasal()" title="Novo casal" style="background:rgba(201,169,110,0.2);border:none;border-radius:6px;width:20px;height:20px;cursor:pointer;color:#C9A96E;font-size:16px;display:flex;align-items:center;justify-content:center;">+</button>
+    </div>
     <div class="sb-casais" id="sb-casais-list"></div>
     <div class="sb-user">
       <div class="sb-avatar" style="background:#FAEEDA; color:#854F0B;" id="user-avatar"></div>
@@ -269,7 +290,33 @@
       </div>
       <div style="flex:1;overflow-y:auto;padding:20px;" id="painel-content"></div>
     </div>
+  
+<!-- MODAL NOVO CASAL -->
+<div id="modal-novo-casal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:28px;width:100%;max-width:480px;margin:20px;">
+    <div style="font-size:16px;font-weight:500;color:#1a1a1a;margin-bottom:4px;">Novo casal</div>
+    <div style="font-size:13px;color:#999;margin-bottom:20px;">Preencha os dados obrigatórios para criar o casamento</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+      <div style="grid-column:1/-1;font-size:12px;font-weight:500;color:#B8945A;padding:6px 10px;background:#FAEEDA;border-radius:8px;">Parceiro(a) 1</div>
+      <div class="field"><label>Nome completo *</label><input id="nc-p1-nome" placeholder="Nome completo" /></div>
+      <div class="field"><label>E-mail *</label><input type="email" id="nc-p1-email" placeholder="email@exemplo.com" /></div>
+      <div style="grid-column:1/-1;font-size:12px;font-weight:500;color:#B8945A;padding:6px 10px;background:#FAEEDA;border-radius:8px;margin-top:4px;">Parceiro(a) 2</div>
+      <div class="field"><label>Nome completo *</label><input id="nc-p2-nome" placeholder="Nome completo" /></div>
+      <div class="field"><label>E-mail *</label><input type="email" id="nc-p2-email" placeholder="email@exemplo.com" /></div>
+      <div style="grid-column:1/-1;font-size:12px;font-weight:500;color:#666;padding:6px 10px;background:#f5f5f5;border-radius:8px;margin-top:4px;">Informações adicionais (opcional)</div>
+      <div class="field"><label>Destino</label><input id="nc-destino" placeholder="Ex: Cancún, México" /></div>
+      <div class="field"><label>Data do casamento</label><input type="date" id="nc-data" /></div>
+      <div class="field" style="grid-column:1/-1;"><label>Wedding Planner responsável</label><select id="nc-wp"><option value="">Selecione...</option></select></div>
+    </div>
+    <div id="nc-erro" style="color:#E24B4A;font-size:12px;margin-bottom:10px;display:none;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn" onclick="fecharNovoCasal()">Cancelar</button>
+      <button class="btn btn-gold" onclick="salvarNovoCasal()"><i class="ti ti-plus"></i> Criar casal</button>
+    </div>
   </div>
+</div>
+
+</div>
 </div>
 
 <script>
@@ -446,7 +493,7 @@ async function renderVisaoGeral() {
         ${(etapas||[]).map(e=>`
           <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:6px;">
             <span>${e.letra.toUpperCase()}) ${e.nome.split(' ').slice(0,4).join(' ')}...</span>
-            <span class="badge ${e.status==='concluido'?'badge-green':e.status==='em_andamento'?'badge-amber':e.status==='aguardando'?'badge-red':'badge-gray'}">${e.status==='concluido'?'Concluído':e.status==='em_andamento'?'Em andamento':e.status==='aguardando'?'Aguardando':'Pendente'}</span>
+            <span class="badge ${e.status==='concluido'?'badge-green':e.status==='em_andamento'?'badge-amber':'badge-gray'}">${e.status==='concluido'?'Finalizado':e.status==='em_andamento'?'Em andamento':'Não iniciado'}</span>
           </div>`).join('')}
       </div>
       <div class="card">
@@ -601,7 +648,7 @@ async function renderCronograma() {
       <div class="card-title"><i class="ti ti-list-numbers"></i> Cronograma de contratação · Caribe</div>
       ${(etapas||[]).map(e=>`
         <div class="etapa-item">
-          <div class="etapa-letra ${e.status==='concluido'?'badge-green':e.status==='em_andamento'?'badge-amber':e.status==='aguardando'?'badge-red':'badge-gray'}">
+          <div class="etapa-letra ${e.status==='concluido'?'badge-green':e.status==='em_andamento'?'badge-amber':'badge-gray'}">
             ${e.status==='concluido'?'<i class="ti ti-check" style="font-size:13px;"></i>':e.letra.toUpperCase()}
           </div>
           <div style="flex:1;">
@@ -611,12 +658,11 @@ async function renderCronograma() {
             ${e.excecao?`<div style="font-size:11px;color:#854F0B;margin-top:2px;">Exceção: ${e.excecao}</div>`:''}
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
-            <span class="badge ${e.status==='concluido'?'badge-green':e.status==='em_andamento'?'badge-amber':e.status==='aguardando'?'badge-red':'badge-gray'}">${e.status==='concluido'?'Concluído':e.status==='em_andamento'?'Em andamento':e.status==='aguardando'?'Aguardando':'Pendente'}</span>
+            <span class="badge ${e.status==='concluido'?'badge-green':e.status==='em_andamento'?'badge-amber':'badge-gray'}">${e.status==='concluido'?'Finalizado':e.status==='em_andamento'?'Em andamento':'Não iniciado'}</span>
             <select onchange="atualizarEtapa('${e.id}', this.value)" style="width:auto;font-size:12px;">
-              <option value="concluido" ${e.status==='concluido'?'selected':''}>Concluído</option>
+              <option value="pendente" ${e.status==='pendente'?'selected':''}>Não iniciado</option>
               <option value="em_andamento" ${e.status==='em_andamento'?'selected':''}>Em andamento</option>
-              <option value="pendente" ${e.status==='pendente'?'selected':''}>Pendente</option>
-              <option value="aguardando" ${e.status==='aguardando'?'selected':''}>Aguardando</option>
+              <option value="concluido" ${e.status==='concluido'?'selected':''}>Finalizado</option>
             </select>
           </div>
         </div>`).join('')}
@@ -1101,6 +1147,84 @@ function statusData(data, concluida) {
 }
 
 // ============================================================
+
+// ============================================================
+// NOVO CASAL
+// ============================================================
+async function abrirNovoCasal() {
+  // Carregar WPs no select
+  const { data: wps } = await db.from('usuarios').select('id, nome').in('perfil', ['wedding_planner']);
+  const sel = document.getElementById('nc-wp');
+  sel.innerHTML = '<option value="">Selecione...</option>' + (wps||[]).map(w => `<option value="${w.id}">${w.nome}</option>`).join('');
+  
+  // Limpar campos
+  ['nc-p1-nome','nc-p1-email','nc-p2-nome','nc-p2-email','nc-destino'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('nc-data').value = '';
+  document.getElementById('nc-erro').style.display = 'none';
+  
+  const modal = document.getElementById('modal-novo-casal');
+  modal.style.display = 'flex';
+}
+
+function fecharNovoCasal() {
+  document.getElementById('modal-novo-casal').style.display = 'none';
+}
+
+async function salvarNovoCasal() {
+  const p1nome = document.getElementById('nc-p1-nome').value.trim();
+  const p1email = document.getElementById('nc-p1-email').value.trim();
+  const p2nome = document.getElementById('nc-p2-nome').value.trim();
+  const p2email = document.getElementById('nc-p2-email').value.trim();
+  const erro = document.getElementById('nc-erro');
+
+  if (!p1nome || !p1email || !p2nome || !p2email) {
+    erro.textContent = 'Preencha o nome completo e e-mail de ambos os parceiros.';
+    erro.style.display = 'block';
+    return;
+  }
+
+  const novoId = crypto.randomUUID();
+  const { error } = await db.from('casais').insert({
+    id: novoId,
+    parceiro1_nome: p1nome,
+    parceiro1_email: p1email,
+    parceiro2_nome: p2nome,
+    parceiro2_email: p2email,
+    destino: document.getElementById('nc-destino').value.trim() || null,
+    data_casamento: document.getElementById('nc-data').value || null,
+    wedding_planner_id: document.getElementById('nc-wp').value || null,
+    num_convidados: 0,
+    status: 'planejamento',
+  });
+
+  if (error) {
+    erro.textContent = 'Erro ao salvar: ' + error.message;
+    erro.style.display = 'block';
+    return;
+  }
+
+  // Criar etapas padrão do Caribe
+  const etapasPadrao = [
+    { letra:'a', nome:'Identidade Visual + Definição dos Eventos', descricao:'Base para todas as outras contratações', ordem:1 },
+    { letra:'b', nome:'Foto e Vídeo', descricao:'Depende da definição dos eventos', ordem:2 },
+    { letra:'c', nome:'Cabelo e Make', descricao:'Depende da definição dos eventos', ordem:3 },
+    { letra:'d', nome:'Músicos + Sistema de Som e Iluminação Cênica', descricao:'Depende de eventos, espaços e nº de convidados', ordem:4 },
+    { letra:'e', nome:'Assessor no Destino + Briefing Decoração', descricao:'Aguarda definição de d)', ordem:5 },
+    { letra:'f', nome:'Definição da Decoração', descricao:'Disponibilidade de flores a partir de 90 dias antes', ordem:6 },
+    { letra:'g', nome:'Alimentação e Bebidas', descricao:'Hotel atende apenas próximo à data', ordem:7 },
+  ];
+  await db.from('etapas_cronograma').insert(etapasPadrao.map(e => ({ ...e, casal_id: novoId, status: 'pendente' })));
+
+  fecharNovoCasal();
+  await carregarCasais();
+  await selecionarCasal(novoId);
+}
+
+// Fechar modal clicando fora
+document.getElementById('modal-novo-casal')?.addEventListener('click', function(e) {
+  if (e.target === this) fecharNovoCasal();
+});
+
 // VERIFICAR SESSÃO AO CARREGAR
 // ============================================================
 window.addEventListener('load', async () => {
